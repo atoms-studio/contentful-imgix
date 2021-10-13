@@ -17,18 +17,33 @@ interface GalleryProps {
   changePage: (newPageIndex: number) => void;
 }
 
-interface GalleryState {
-  fullUrls: Array<string>;
-  selectedImage: string;
+export interface ImageData {
+  url: string;
+  details: Details;
+  fileName: string;
+  contentType: string;
 }
+interface Details {
+  size: number;
+  image: Image;
+}
+interface Image {
+  width: number;
+  height: number;
+}
+interface GalleryState {
+  allImageData: ImageData[];
+  selectedImage: ImageData;
+}
+
 
 export class Gallery extends Component<GalleryProps, GalleryState> {
   constructor(props: GalleryProps) {
     super(props);
 
     this.state = {
-      fullUrls: [],
-      selectedImage: '',
+      allImageData: [],
+      selectedImage: {} as ImageData,
     };
   }
 
@@ -36,6 +51,7 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
     const assets = await this.props.imgix.request(
       `assets/${this.props.selectedSource?.id}?page[number]=${this.props.pageInfo.currentIndex}&page[size]=18`,
     );
+    console.log(`getImages: assets/${this.props.selectedSource?.id}?page[number]=${this.props.pageInfo.currentIndex}&page[size]=18`);
     // TODO: add more explicit types for image
     this.props.getTotalImageCount(
       parseInt((assets.meta.cursor as any).totalRecords || 0),
@@ -43,9 +59,9 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
     return assets;
   };
 
-  getImagePaths = async () => {
+  getImagesData = async () => {
     let images,
-      allOriginPaths: string[] = [];
+      allImageData: ImageData[] = [];
 
     try {
       images = await this.getImages();
@@ -56,7 +72,7 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
       } else {
         console.error(error);
       }
-      return allOriginPaths;
+      return allImageData;
     }
 
     /*
@@ -68,30 +84,40 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
       const imagesArray = Array.isArray(images.data)
         ? images.data
         : [images.data];
-      imagesArray.map((image: any) =>
-        // TODO: add more explicit types for image
-        allOriginPaths.push(image.attributes.origin_path),
-      );
 
-      return allOriginPaths;
+      // Required focal point imgix attributes  
+      // eslint-disable-next-line array-callback-return
+      imagesArray.map((image: any) => {
+          const imageData: ImageData = {
+            url: this.constructUrl(image.attributes.origin_path),
+            details: { 
+              size: image.attributes.file_size, 
+              image: { 
+                width: image.attributes.media_width, 
+                height: image.attributes.media_height 
+              } 
+            },
+            fileName: image.attributes?.name || "",
+            contentType: image.attributes.content_type
+          };
+          allImageData.push(imageData);
+        })
+
+      return allImageData;
     } else {
       return [];
     }
   };
 
   /*
-   * Constructs an array of imgix image URL from the selected source in the
+   * Construct an imgix image URL from the selected source in the
    * application Dialog component
    */
-  constructUrl(images: string[]) {
+  constructUrl(path: string) {
     const scheme = 'https://';
     const domain = this.props.selectedSource.name;
     const imgixDomain = '.imgix.net';
-
-    const urls = images.map(
-      (path: string) => scheme + domain + imgixDomain + path,
-    );
-    return urls;
+    return scheme + domain + imgixDomain + path;
   }
 
   /*
@@ -101,14 +127,13 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
   async requestImageUrls() {
     // if selected source, return images
     if (Object.keys(this.props.selectedSource).length) {
-      const images = await this.getImagePaths();
-      const fullUrls = this.constructUrl(images);
+      const allImageData = await this.getImagesData();
       // if at least one path, remove placeholders
 
-      if (fullUrls.length) {
-        this.setState({ fullUrls });
+      if (allImageData.length) {
+        this.setState({ allImageData });
       } else {
-        this.setState({ fullUrls: [] });
+        this.setState({ allImageData: [] });
       }
     }
   }
@@ -126,29 +151,31 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
     }
   }
 
-  handleClick = (selectedImage: string) => this.setState({ selectedImage });
+  handleClick = (selectedImage: ImageData) => {
+    this.setState({ selectedImage });
+  };
 
   handleSubmit = () => {
     this.props.sdk.close(this.state.selectedImage);
   };
 
   render() {
-    const { fullUrls, selectedImage } = this.state;
+    const { allImageData, selectedImage } = this.state;
 
-    if (!fullUrls.length) {
+    if (!allImageData.length) {
       return <ImagePlaceholder />;
     }
 
     return (
       <div>
         <div className="ix-gallery">
-          {fullUrls.map((url: string) => {
+          {allImageData.map((imageData: any) => {
             return (
               <GridImage
-                key={url}
-                selected={selectedImage === url}
-                imageSrc={url}
-                handleClick={() => this.handleClick(url)}
+                key={imageData.url}
+                selected={selectedImage?.url === imageData.url}
+                imageSrc={imageData.url}
+                handleClick={() => this.handleClick(imageData)}
               />
             );
           })}
@@ -160,8 +187,8 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
             changePage={this.props.changePage}
           />
           <ImageSelectButton
-            hidden={!!fullUrls.length}
-            disabled={selectedImage === ''}
+            hidden={!!allImageData.length}
+            disabled={selectedImage?.url === ''}
             handleSubmit={this.handleSubmit}
           />
         </div>

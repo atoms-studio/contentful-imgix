@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import { FieldExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { debounce } from 'lodash';
+import { ImageData } from '../Gallery/ImageGallery';
 
 import { FieldImagePreview, FieldPrompt } from './';
 
@@ -9,7 +10,7 @@ interface FieldProps {
 }
 
 interface FieldState {
-  imagePath: string | undefined;
+  imageData: ImageData;
 }
 
 export default class Field extends Component<FieldProps, FieldState> {
@@ -17,9 +18,9 @@ export default class Field extends Component<FieldProps, FieldState> {
     super(props);
 
     const storedValue = this.props.sdk.field.getValue();
-
+    
     this.state = {
-      imagePath: storedValue?.src || '',
+      imageData: storedValue || {},
     };
   }
 
@@ -32,29 +33,29 @@ export default class Field extends Component<FieldProps, FieldState> {
         shouldCloseOnOverlayClick: true,
         allowHeightOverflow: true,
         parameters: {
-          selectedImage: this.state.imagePath,
+          selectedImage: this.state.imageData,
         },
       })
-      .then((imagePath) =>
-        this.setState({ imagePath }, () =>
-          this.props.sdk.field.setValue({ src: imagePath }),
+      .then((imageData) => 
+        this.setState({ imageData }, () =>
+          this.props.sdk.field.setValue({ ...imageData }),
         ),
       );
   };
   debounceOpenDialog = debounce(this.openDialog, 1000, { leading: true });
 
   clearSelection = () => {
-    this.setState({ imagePath: undefined }, () =>
-      this.props.sdk.field.setValue(undefined),
+    this.setState({ imageData: {} as ImageData }, () =>
+      this.props.sdk.field.setValue({}),
     );
   };
 
   render() {
     const updateHeightHandler = this.props.sdk.window.updateHeight;
-    if (this.state.imagePath) {
+    if (this.state.imageData?.url) {
       return (
         <FieldImagePreview
-          imagePath={this.state.imagePath}
+          imageData={this.state.imageData}
           openDialog={this.debounceOpenDialog}
           updateHeight={updateHeightHandler}
           clearSelection={this.clearSelection}

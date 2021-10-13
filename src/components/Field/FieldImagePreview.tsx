@@ -1,18 +1,19 @@
 import { ReactElement } from 'react';
 import { Button } from '@contentful/forma-36-react-components';
 import Imgix from 'react-imgix';
+import { ImageData } from '../Gallery/ImageGallery';
 
 import './FieldImagePreview.css';
 
 interface FieldImagePreviewProps {
-  imagePath: string;
+  imageData: ImageData;
   updateHeight: Function;
   openDialog: Function;
   clearSelection: Function;
 }
 
 export function FieldImagePreview({
-  imagePath,
+  imageData,
   openDialog,
   updateHeight,
   clearSelection,
@@ -23,7 +24,7 @@ export function FieldImagePreview({
       <Imgix
         width={230}
         height={230}
-        src={imagePath}
+        src={imageData?.url}
         imgixParams={{
           auto: 'format',
           fit: 'crop',
