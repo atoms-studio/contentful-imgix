@@ -6,6 +6,10 @@
   1201px and more — Extra large screens, TV.
 */
 
+.ix-gallery-header {
+  margin-top: 32px;
+}
+
 .ix-gallery {
   display: grid;
   grid-gap: 20px;
@@ -14,6 +18,8 @@
   margin-top: 32px;
   margin-bottom: 32px;
   overflow: hidden;
+  background: #f3f3f3;
+  padding: 20px;
 }
 
 .ix-gallery-footer {

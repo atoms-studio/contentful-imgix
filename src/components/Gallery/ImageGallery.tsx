@@ -1,6 +1,8 @@
-import { Component } from 'react';
+import { Component, FormEvent } from 'react';
 import ImgixAPI, { APIError } from 'imgix-management-js';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
+import { TextInput } from '@contentful/forma-36-react-components';
+import { debounce } from 'lodash';
 
 import { SourceProps, PageProps } from '../Dialog';
 import { ImageSelectButton } from '../ImageSelect/ImageSelect';
@@ -18,8 +20,9 @@ interface GalleryProps {
 }
 
 interface GalleryState {
-  fullUrls: Array<string>;
+  fullUrls: Array<Record<string, string>>;
   selectedImage: string;
+  query: string;
 }
 
 export class Gallery extends Component<GalleryProps, GalleryState> {
@@ -29,13 +32,16 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
     this.state = {
       fullUrls: [],
       selectedImage: '',
+      query: '',
     };
   }
 
   getImages = async () => {
-    const assets = await this.props.imgix.request(
-      `assets/${this.props.selectedSource?.id}?page[number]=${this.props.pageInfo.currentIndex}&page[size]=18`,
-    );
+    let url = `assets/${this.props.selectedSource?.id}?page[number]=${this.props.pageInfo.currentIndex}&page[size]=18`
+    if (this.state.query) {
+      url += `&filter[or:categories]=${this.state.query}&filter[or:keywords]=${this.state.query}&filter[or:origin_path]=${this.state.query}`
+    }
+    const assets = await this.props.imgix.request(url);
     // TODO: add more explicit types for image
     this.props.getTotalImageCount(
       parseInt((assets.meta.cursor as any).totalRecords || 0),
@@ -70,7 +76,7 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
         : [images.data];
       imagesArray.map((image: any) =>
         // TODO: add more explicit types for image
-        allOriginPaths.push(image.attributes.origin_path),
+        allOriginPaths.push(image.attributes.origin_path)
       );
 
       return allOriginPaths;
@@ -88,10 +94,13 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
     const domain = this.props.selectedSource.name;
     const imgixDomain = '.imgix.net';
 
-    const urls = images.map(
-      (path: string) => scheme + domain + imgixDomain + path,
+    const imageDetails = images.map(
+      (path: string) => ({
+        url: scheme + domain + imgixDomain + path,
+        path,
+      })
     );
-    return urls;
+    return imageDetails;
   }
 
   /*
@@ -132,8 +141,19 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
     this.props.sdk.close(this.state.selectedImage);
   };
 
+  debounceSearch = debounce(() => {
+    this.requestImageUrls()
+  }, 1000);
+
+  handleChange = (event: FormEvent<HTMLInputElement>) => {
+    const target = event.target as HTMLInputElement
+    this.setState({ query: target.value });
+
+    this.debounceSearch();
+  }
+
   render() {
-    const { fullUrls, selectedImage } = this.state;
+    const { fullUrls, selectedImage, query } = this.state;
 
     if (!fullUrls.length) {
       return <ImagePlaceholder />;
@@ -141,13 +161,17 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
 
     return (
       <div>
+        <div className="ix-gallery-header">
+          <TextInput name="ix-search-query" value={query} placeholder="Search by filename, path, tag, or category" onChange={this.handleChange} />
+        </div>
         <div className="ix-gallery">
-          {fullUrls.map((url: string) => {
+          {fullUrls.map(({ url, path }: Record<string, string>) => {
             return (
               <GridImage
                 key={url}
                 selected={selectedImage === url}
                 imageSrc={url}
+                path={path}
                 handleClick={() => this.handleClick(url)}
               />
             );
