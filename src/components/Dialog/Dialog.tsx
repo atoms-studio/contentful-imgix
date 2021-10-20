@@ -14,6 +14,7 @@ import {
   noSourcesError,
   noOriginImagesError,
 } from '../../helpers/errors';
+import { ImageData } from '../Gallery/ImageGallery';
 
 import './Dialog.css';
 
@@ -43,7 +44,7 @@ export type SourceProps = {
 };
 
 type AppInvocationParameters = {
-  selectedImage: string;
+  selectedImage: ImageData | {};
 };
 
 export default class Dialog extends Component<DialogProps, DialogState> {

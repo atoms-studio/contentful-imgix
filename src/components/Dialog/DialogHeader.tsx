@@ -3,7 +3,7 @@ import { Button, Paragraph } from '@contentful/forma-36-react-components';
 
 import './DialogHeader.css';
 
-type selectedImageType = string | undefined;
+type selectedImageType = ImageData | {};
 
 interface DialogHeaderProps {
   handleClose: (selectedImage: selectedImageType) => void;
