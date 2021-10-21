@@ -8,6 +8,17 @@
 
 .ix-gallery-header {
   margin-top: 32px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ix-upload-wrap {
+  flex-shrink: 0;
+  margin-left: 20px;
+}
+
+.ix-upload-wrap button {
+  height: 100%;
 }
 
 .ix-gallery {
@@ -18,8 +29,6 @@
   margin-top: 32px;
   margin-bottom: 32px;
   overflow: hidden;
-  background: #f3f3f3;
-  padding: 20px;
 }
 
 .ix-gallery-footer {

@@ -24,13 +24,12 @@ export function ImageSelectButton({
   return (
     <Button
       size="small"
-      buttonType="primary"
+      buttonType="positive"
       className={hidden ? 'ix-select-addButton' : 'ix-select-addButton_hidden'}
-      icon="Plus"
       disabled={disabled}
       onClick={handleClick}
     >
-      Add image
+      Select image
     </Button>
   );
 }

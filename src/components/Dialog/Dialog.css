@@ -1,15 +1,3 @@
-.ix-container {
-  padding: 20px;
-}
-
-@media only screen and (min-width: 481px) {
-  .ix-container {
-    padding: 40px;
-  }
-}
-
-@media only screen and (min-width: 1025px) {
-  .ix-container {
-    padding: 40px 64px;
-  }
+.ix-tabs {
+  margin-top: 32px;
 }

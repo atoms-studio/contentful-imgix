@@ -1,5 +1,6 @@
-import { FunctionComponent, MouseEventHandler } from 'react';
+import { FunctionComponent, MouseEvent, KeyboardEvent } from 'react';
 import Imgix from 'react-imgix';
+import { Card } from '@contentful/forma-36-react-components'
 
 import './GridImage.css';
 
@@ -7,7 +8,7 @@ interface GridImageComponentProps {
   imageSrc: string;
   path: string;
   selected: boolean;
-  handleClick: MouseEventHandler<HTMLDivElement>;
+  handleClick: (e: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>) => void;
 }
 
 export const GridImage: FunctionComponent<GridImageComponentProps> = ({
@@ -18,8 +19,8 @@ export const GridImage: FunctionComponent<GridImageComponentProps> = ({
 }) => {
   const focus = selected ? ' ix-selected' : '';
   return (
-    <div onClick={handleClick} className="ix-gallery-item" title={path}>
-      <div className={'ix-gallery-image-gradient' + focus}></div>
+    <Card padding="none" onClick={handleClick} selected={selected} className={'ix-gallery-item' + focus} title={path}>
+      <div className={'ix-gallery-image-gradient'}></div>
       <Imgix
         src={imageSrc}
         width={140}
@@ -34,6 +35,6 @@ export const GridImage: FunctionComponent<GridImageComponentProps> = ({
       <div className="ix-gallery-image-name">
         <span>{path}</span>
       </div>
-    </div>
+    </Card>
   );
 };

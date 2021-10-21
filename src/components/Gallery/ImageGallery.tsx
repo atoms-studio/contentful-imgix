@@ -1,7 +1,7 @@
 import { Component, FormEvent } from 'react';
 import ImgixAPI, { APIError } from 'imgix-management-js';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
-import { TextInput } from '@contentful/forma-36-react-components';
+import { TextInput, Button, SkeletonContainer, SkeletonImage } from '@contentful/forma-36-react-components';
 import { debounce } from 'lodash';
 
 import { SourceProps, PageProps } from '../Dialog';
@@ -10,11 +10,18 @@ import { GridImage, ImagePlaceholder, ImagePagination } from './';
 
 import './ImageGallery.css';
 
+const getSkeletons = (): any[] => {
+  return new Array(18).fill(() => 1).map((_, i) => 
+    <SkeletonContainer>
+      <SkeletonImage width={150} height={150} key={'skeleton-' + i} />
+    </SkeletonContainer>
+  );
+}
 interface GalleryProps {
   selectedSource: Partial<SourceProps>;
   imgix: ImgixAPI;
   sdk: DialogExtensionSDK;
-  getTotalImageCount: (totalImageCount: number) => void;
+  getTotalImageCount: (totalImageCount: number, isFiltering: boolean) => void;
   pageInfo: PageProps;
   changePage: (newPageIndex: number) => void;
 }
@@ -37,6 +44,7 @@ interface Image {
 interface GalleryState {
   fullUrls: Array<Record<string, string>>;
   query: string;
+  loading: boolean;
   allImageData: ImageData[];
   selectedImage: ImageData;
 }
@@ -47,6 +55,7 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
     this.state = {
       fullUrls: [],
       query: '',
+      loading: false,
       allImageData: [],
       selectedImage: {} as ImageData,
     };
@@ -54,13 +63,16 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
 
   getImages = async () => {
     let url = `assets/${this.props.selectedSource?.id}?page[number]=${this.props.pageInfo.currentIndex}&page[size]=18`
+    let isFiltering = false
     if (this.state.query) {
+      isFiltering = true
       url += `&filter[or:categories]=${this.state.query}&filter[or:keywords]=${this.state.query}&filter[or:origin_path]=${this.state.query}`
     }
     const assets = await this.props.imgix.request(url);
     // TODO: add more explicit types for image
     this.props.getTotalImageCount(
       parseInt((assets.meta.cursor as any).totalRecords || 0),
+      isFiltering,
     );
     return assets;
   };
@@ -135,6 +147,7 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
   async requestImageUrls() {
     // if selected source, return images
     if (Object.keys(this.props.selectedSource).length) {
+      this.setState({ loading: true })
       const allImageData = await this.getImagesData();
       // if at least one path, remove placeholders
 
@@ -143,6 +156,7 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
       } else {
         this.setState({ allImageData: [] });
       }
+      this.setState({ loading: false })
     }
   }
 
@@ -179,9 +193,9 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
   }
 
   render() {
-    const { allImageData, selectedImage, query } = this.state;
+    const { allImageData, selectedImage, query, loading } = this.state;
 
-    if (!allImageData.length) {
+    if (!this.props.selectedSource || (!allImageData.length && !query && !loading)) {
       return <ImagePlaceholder />;
     }
 
@@ -189,9 +203,19 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
       <div>
         <div className="ix-gallery-header">
           <TextInput name="ix-search-query" value={query} placeholder="Search by filename, path, tag, or category" onChange={this.handleChange} />
+
+          <div className="ix-upload-wrap">
+            <Button
+                size="small"
+                icon="Plus"
+                buttonType="primary"
+              >
+                Upload
+              </Button>
+          </div>
         </div>
         <div className="ix-gallery">
-          {allImageData.map((imageData: any) => {
+          { loading ? getSkeletons() : allImageData.map((imageData: ImageData) => {
             return (
               <GridImage
                 key={imageData.url}

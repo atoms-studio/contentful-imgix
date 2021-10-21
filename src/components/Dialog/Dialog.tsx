@@ -1,11 +1,12 @@
 import { Component } from 'react';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
+import { Tabs, TabPanel, Tab, Modal } from '@contentful/forma-36-react-components';
 import ImgixAPI, { APIError } from 'imgix-management-js';
 import { debounce } from 'lodash';
 
-import { DialogHeader } from './';
 import { AppInstallationParameters } from '../ConfigScreen/';
 import { ImageGallery } from '../Gallery/';
+import { UploadPanel } from '../UploadPanel/';
 import { SourceSelect } from '../SourceSelect/';
 import { Note } from '../Note/';
 import {
@@ -30,6 +31,7 @@ interface DialogState {
   page: PageProps;
   verified: boolean; // if API key is verified
   errors: IxError[]; // array of IxErrors if any
+  selectedTab: string;
 }
 
 export type PageProps = {
@@ -70,6 +72,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       },
       verified,
       errors: [],
+      selectedTab: 'gallery',
     };
   }
 
@@ -119,11 +122,11 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     return enabledSources;
   };
 
-  handleTotalImageCount = (totalImageCount: number) => {
+  handleTotalImageCount = (totalImageCount: number, isFiltering = false) => {
     const totalPageCount = Math.ceil(totalImageCount / 18);
     let errors = [...this.state.errors];
 
-    if (!totalPageCount) {
+    if (!totalPageCount && !isFiltering) {
       errors.push(noOriginImagesError());
     }
 
@@ -172,8 +175,12 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     }
   }
 
+  setTab = (id: string) => {
+    this.setState({ selectedTab: id });
+  }
+
   render() {
-    const { selectedSource, allSources, page, imgix } = this.state;
+    const { selectedSource, allSources, page, imgix, selectedTab } = this.state;
     const sdk = this.props.sdk;
     const selectedImage = (
       this.props.sdk.parameters.invocation as AppInvocationParameters
@@ -181,29 +188,58 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
     return (
       <div className="ix-container">
-        <DialogHeader handleClose={sdk.close} selectedImage={selectedImage} />
-        <SourceSelect
-          selectedSource={selectedSource}
-          allSources={allSources}
-          setSource={this.setSelectedSource}
-          resetErrors={() => this.resetNErrors(this.state.errors.length)}
-        />
-        <ImageGallery
-          selectedSource={selectedSource}
-          imgix={imgix}
-          sdk={sdk}
-          getTotalImageCount={this.handleTotalImageCount}
-          pageInfo={page}
-          changePage={this.debounceHandlePageChange}
-        />
-        {/* { UI Error fallback } */}
-        {this.state.errors.length > 0 && (
-          <Note
-            error={this.state.errors[0]}
-            type={this.state.errors[0].type}
-            resetErrorBoundary={this.resetNErrors}
+        <Modal.Header title="Select imgIX image" onClose={() => sdk.close(selectedImage)} />
+        <Modal.Content>
+          <SourceSelect
+            selectedSource={selectedSource}
+            allSources={allSources}
+            setSource={this.setSelectedSource}
+            resetErrors={() => this.resetNErrors(this.state.errors.length)}
           />
-        )}
+
+          <div className="ix-tabs">
+            <Tabs role="tablist" withDivider>
+              <Tab id="gallery" selected={selectedTab === 'gallery'} onSelect={this.setTab}>
+                Browse images
+              </Tab>
+              <Tab id="upload" disabled={!selectedSource.id} selected={selectedTab === 'upload'} onSelect={this.setTab}>
+                Uploads (0)
+              </Tab>
+            </Tabs>
+          </div>
+
+          {selectedTab === 'gallery' && (
+            <TabPanel id="gallery">
+              <ImageGallery
+                selectedSource={selectedSource}
+                imgix={imgix}
+                sdk={sdk}
+                getTotalImageCount={this.handleTotalImageCount}
+                pageInfo={page}
+                changePage={this.debounceHandlePageChange}
+              />
+            </TabPanel>
+          )}
+
+          {selectedTab === 'upload' && (
+            <TabPanel id="upload">
+              <UploadPanel
+                selectedSource={selectedSource}
+                imgix={imgix}
+                sdk={sdk}
+              />
+            </TabPanel>
+          )}
+          
+          {/* { UI Error fallback } */}
+          {this.state.errors.length > 0 && (
+            <Note
+              error={this.state.errors[0]}
+              type={this.state.errors[0].type}
+              resetErrorBoundary={this.resetNErrors}
+            />
+          )}
+        </Modal.Content>
       </div>
     );
   }
