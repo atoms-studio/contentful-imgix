@@ -1,0 +1,12 @@
+.ix-upload-panel-preview-path {
+  margin-top: 32px;
+  max-width: 500px;
+}
+
+.ix-upload-panel-preview-buttons {
+  margin-top: 32px;
+}
+
+.ix-upload-panel-preview-buttons button + button {
+  margin-left: 12px;
+}

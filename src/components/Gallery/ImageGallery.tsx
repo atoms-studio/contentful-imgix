@@ -1,7 +1,7 @@
 import { Component, FormEvent } from 'react';
 import ImgixAPI, { APIError } from 'imgix-management-js';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
-import { TextInput, Button, SkeletonContainer, SkeletonImage } from '@contentful/forma-36-react-components';
+import { TextInput, SkeletonContainer, SkeletonImage } from '@contentful/forma-36-react-components';
 import { debounce } from 'lodash';
 
 import { SourceProps, PageProps } from '../Dialog';
@@ -12,8 +12,8 @@ import './ImageGallery.css';
 
 const getSkeletons = (): any[] => {
   return new Array(18).fill(() => 1).map((_, i) => 
-    <SkeletonContainer>
-      <SkeletonImage width={150} height={150} key={'skeleton-' + i} />
+    <SkeletonContainer key={'skeleton-' + i}>
+      <SkeletonImage width={150} height={150} />
     </SkeletonContainer>
   );
 }
@@ -203,16 +203,6 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
       <div>
         <div className="ix-gallery-header">
           <TextInput name="ix-search-query" value={query} placeholder="Search by filename, path, tag, or category" onChange={this.handleChange} />
-
-          <div className="ix-upload-wrap">
-            <Button
-                size="small"
-                icon="Plus"
-                buttonType="primary"
-              >
-                Upload
-              </Button>
-          </div>
         </div>
         <div className="ix-gallery">
           { loading ? getSkeletons() : allImageData.map((imageData: ImageData) => {

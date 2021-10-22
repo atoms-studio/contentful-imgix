@@ -32,6 +32,7 @@ interface DialogState {
   verified: boolean; // if API key is verified
   errors: IxError[]; // array of IxErrors if any
   selectedTab: string;
+  uploadsInProgress: number;
 }
 
 export type PageProps = {
@@ -73,6 +74,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       verified,
       errors: [],
       selectedTab: 'gallery',
+      uploadsInProgress: 0,
     };
   }
 
@@ -179,8 +181,12 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     this.setState({ selectedTab: id });
   }
 
+  setUploadsInProgress = (uploadsInProgress: number) => {
+    this.setState({ uploadsInProgress });
+  }
+
   render() {
-    const { selectedSource, allSources, page, imgix, selectedTab } = this.state;
+    const { selectedSource, allSources, page, imgix, selectedTab, uploadsInProgress } = this.state;
     const sdk = this.props.sdk;
     const selectedImage = (
       this.props.sdk.parameters.invocation as AppInvocationParameters
@@ -203,7 +209,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
                 Browse images
               </Tab>
               <Tab id="upload" disabled={!selectedSource.id} selected={selectedTab === 'upload'} onSelect={this.setTab}>
-                Uploads (0)
+                Uploads ({uploadsInProgress})
               </Tab>
             </Tabs>
           </div>
@@ -221,15 +227,14 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             </TabPanel>
           )}
 
-          {selectedTab === 'upload' && (
-            <TabPanel id="upload">
-              <UploadPanel
-                selectedSource={selectedSource}
-                imgix={imgix}
-                sdk={sdk}
-              />
-            </TabPanel>
-          )}
+          <TabPanel id="upload" className={selectedTab === 'upload' ? '' : 'ix-hidden'}>
+            <UploadPanel
+              selectedSource={selectedSource}
+              imgix={imgix}
+              sdk={sdk}
+              onProgressUpdate={this.setUploadsInProgress}
+            />
+          </TabPanel>
           
           {/* { UI Error fallback } */}
           {this.state.errors.length > 0 && (

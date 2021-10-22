@@ -1,3 +1,7 @@
 .ix-tabs {
   margin-top: 32px;
 }
+
+.ix-hidden {
+  display: none;
+}

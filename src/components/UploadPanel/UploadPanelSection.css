@@ -5,3 +5,9 @@
 .ix-upload-panel-table {
   margin-top: 16px;
 }
+
+.ix-upload-panel-empty-cell {
+  text-align: center;
+  opacity: 0.35;
+  vertical-align: middle;
+}
