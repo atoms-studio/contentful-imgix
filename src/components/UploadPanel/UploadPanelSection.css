@@ -11,3 +11,17 @@
   opacity: 0.35;
   vertical-align: middle;
 }
+
+.ix-upload-panel-section-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ix-upload-panel-section-header button {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  text-decoration: underline;
+  font-weight: 700;
+  cursor: pointer;
+}

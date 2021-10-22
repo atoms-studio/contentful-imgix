@@ -111,9 +111,28 @@ export function UploadPanel({
           headers: {
             Authorization: `Bearer ${(imgix as any).settings.apiKey}`,
           }
+        }).then((response) => {
+          if (response.status < 200 || response.status >= 400) {
+            return Promise.reject(response);
+          } else {
+            return response.json();
+          }
         })
       } catch (err: any) {
-        completeItem.error = err
+        if (err.status) {
+          switch (err.status) {
+            case 401:
+              completeItem.error = new APIError('Invalid credentials. Check your API key.', null, 401) as any
+              break
+            case 422:
+              completeItem.error = new APIError('File already exists', null, 422) as any
+              break
+            default:
+              completeItem.error = new Error('Unknown error. Please try again.') as any
+          }
+        } else {
+          completeItem.error = new Error('Unknown error. Please try again.') as any
+        }
       }
 
       const newInProgressItems = uploadInProgressItems.slice()
@@ -128,6 +147,10 @@ export function UploadPanel({
       upload(uploadInProgressItems[0])
     }
   }, [ uploadInProgressItems, currentUpload, uploadCompleteItems, imgix, selectedSource.id, onProgressUpdate ])
+
+  const handleClear = () => {
+    setUploadCompleteItems([])
+  }
 
   return (
     <div className="ix-upload-panel">
@@ -147,7 +170,7 @@ export function UploadPanel({
           <UploadPanelPreview items={uploadPreviewItems} onConfirm={handleUploadConfirm} onCancel={handleUploadCancel} />
         ) : (
           <React.Fragment>
-            <UploadPanelSection title="Finished" items={uploadCompleteItems} mode="complete" />
+            <UploadPanelSection title="Finished" items={uploadCompleteItems} mode="complete" onClear={handleClear} />
             <UploadPanelSection title="In progress" items={uploadInProgressItems} mode="in-progress" current={currentUpload} />
           </React.Fragment>
         )

@@ -9,6 +9,7 @@ interface UploadPanelSectionProps {
   items: Array<UploadCompleteItem | UploadInProgressItem | UploadPreviewItem>
   mode: 'preview' | 'in-progress' | 'complete',
   current?: UploadInProgressItem | null
+  onClear?: () => void
 }
 
 export function UploadPanelSection({
@@ -16,6 +17,7 @@ export function UploadPanelSection({
   items,
   mode,
   current,
+  onClear,
 }: UploadPanelSectionProps) {
   let headers = []
   switch (mode) {
@@ -104,7 +106,10 @@ export function UploadPanelSection({
 
   return (
     <div className="ix-upload-panel-section">
-      <Subheading>{ title } ({items.length})</Subheading>
+      <div className="ix-upload-panel-section-header">
+        <Subheading>{ title } ({items.length})</Subheading>
+        {( onClear && <button onClick={onClear}>Clear</button> )}
+      </div>
       <div>
       <Table className="ix-upload-panel-table">
         <TableHead>
