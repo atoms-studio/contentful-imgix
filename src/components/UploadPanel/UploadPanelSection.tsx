@@ -1,6 +1,7 @@
 // import { useState } from 'react';
 import { Subheading, Table, TableHead, TableBody, TableRow, TableCell, Icon, Spinner } from '@contentful/forma-36-react-components';
 import { UploadCompleteItem, UploadInProgressItem, UploadPreviewItem } from './UploadPanel'
+import { formatDate, formatSize } from '../../helpers/formatters'
 
 import './UploadPanelSection.css';
 
@@ -29,17 +30,6 @@ export function UploadPanelSection({
       break
     case 'complete':
       headers = ['Full path', 'Size', 'Upload Started']
-  }
-
-  const formatSize = (size: number) => {
-    if (size < 1024 * 1024) {
-      return `${(size / 1024).toFixed(1)} KB`;
-    }
-    return `${(size / 1024 / 1024).toFixed(1)} MB`;
-  }
-
-  const formatDate = (date: number) => {
-    return new Date(date).toLocaleTimeString();
   }
 
   const renderList = () => {
