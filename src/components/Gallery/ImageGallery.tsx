@@ -4,7 +4,8 @@ import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { TextInput, SkeletonContainer, SkeletonImage } from '@contentful/forma-36-react-components';
 import { debounce } from 'lodash';
 
-import { SourceProps, PageProps } from '../Dialog';
+import { PageProps } from '../Dialog';
+import { SourceProps } from '../../helpers/sources';
 import { ImageSelectButton } from '../ImageSelect/ImageSelect';
 import { GridImage, ImagePlaceholder, ImagePagination } from './';
 

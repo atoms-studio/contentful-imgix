@@ -1,9 +1,10 @@
 import { Component } from 'react';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { Tabs, TabPanel, Tab, Modal } from '@contentful/forma-36-react-components';
-import ImgixAPI, { APIError } from 'imgix-management-js';
+import ImgixAPI from 'imgix-management-js';
 import { debounce } from 'lodash';
 
+import { SourceProps, getSourceIDAndPaths } from '../../helpers/sources';
 import { AppInstallationParameters } from '../ConfigScreen/';
 import { ImageGallery } from '../Gallery/';
 import { UploadPanel } from '../UploadPanel/';
@@ -28,6 +29,7 @@ interface DialogState {
   isOpen: boolean;
   allSources: Array<SourceProps>;
   selectedSource: Partial<SourceProps>;
+  disableSourceSelection: boolean;
   page: PageProps;
   verified: boolean; // if API key is verified
   errors: IxError[]; // array of IxErrors if any
@@ -40,11 +42,7 @@ export type PageProps = {
   totalPageCount: number;
 };
 
-export type SourceProps = {
-  id: string;
-  name: string;
-  domain: string;
-};
+
 
 type AppInvocationParameters = {
   selectedImage: ImageData | {};
@@ -66,7 +64,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       imgix,
       isOpen: false,
       allSources: [],
-      selectedSource: {},
+      selectedSource: installationParameters.defaultSource || {},
+      disableSourceSelection: installationParameters.disableSourceSelection || false,
       page: {
         currentIndex: 0,
         totalPageCount: 1,
@@ -80,48 +79,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
   getSources = async () => {
     return await this.state.imgix.request('sources');
-  };
-
-  getSourceIDAndPaths = async (): Promise<Array<SourceProps>> => {
-    let sources,
-      enabledSources: Array<SourceProps> = [];
-
-    try {
-      sources = await this.getSources();
-    } catch (error) {
-      // APIError will emit more helpful data for debugging
-      if (error instanceof APIError) {
-        console.error(error.toString());
-      } else {
-        console.error(error);
-      }
-      return enabledSources;
-    }
-
-    /*
-     * Resolved requests can either return an array of objects or a single
-     * object via the `data` top-level field. When parsing all enabled sources,
-     * both possibilities must be accounted for.
-     */
-    const sourcesArray = Array.isArray(sources.data)
-      ? sources.data
-      : [sources.data];
-    enabledSources = sourcesArray.reduce(
-      (result: SourceProps[], source: any) => {
-        // TODO: add more explicit types for source
-        if (source.attributes.enabled) {
-          const id = source.id;
-          const name = source.attributes.name;
-          // there may be multiple domains, but we'll extract the first one for now
-          let domain = source.attributes.deployment.imgix_subdomains[0];
-          result.push({ id, name, domain });
-        }
-        return result;
-      },
-      [] as SourceProps[],
-    );
-
-    return enabledSources;
   };
 
   handleTotalImageCount = (totalImageCount: number, isFiltering = false) => {
@@ -167,7 +124,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       return;
     }
     try {
-      const sources = await this.getSourceIDAndPaths();
+      const sources = await getSourceIDAndPaths(this.state.imgix);
       if (sources.length === 0) {
         throw noSourcesError();
       }
@@ -186,7 +143,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   }
 
   render() {
-    const { selectedSource, allSources, page, imgix, selectedTab, uploadsInProgress } = this.state;
+    const { selectedSource, allSources, page, imgix, selectedTab, uploadsInProgress, disableSourceSelection } = this.state;
     const sdk = this.props.sdk;
     const selectedImage = (
       this.props.sdk.parameters.invocation as AppInvocationParameters
@@ -196,12 +153,12 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       <div className="ix-container">
         <Modal.Header title="Select imgIX image" onClose={() => sdk.close(selectedImage)} />
         <Modal.Content>
-          <SourceSelect
+          { !disableSourceSelection && <SourceSelect
             selectedSource={selectedSource}
             allSources={allSources}
             setSource={this.setSelectedSource}
             resetErrors={() => this.resetNErrors(this.state.errors.length)}
-          />
+          /> }
 
           <div className="ix-tabs">
             <Tabs role="tablist" withDivider>

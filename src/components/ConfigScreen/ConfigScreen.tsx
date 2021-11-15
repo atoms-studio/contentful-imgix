@@ -14,15 +14,20 @@ import {
   ListItem,
   CheckboxField,
   Subheading,
+  FormLabel,
 } from '@contentful/forma-36-react-components';
 import ImgixAPI, { APIError } from 'imgix-management-js';
 import debounce from 'lodash.debounce';
+import { SourceProps, getSourceIDAndPaths } from '../../helpers/sources';
+import { SourceSelect } from '../SourceSelect'
 
 import './ConfigScreen.css';
 
 export interface AppInstallationParameters {
   imgixAPIKey?: string;
   successfullyVerified?: boolean;
+  defaultSource?: SourceProps;
+  disableSourceSelection?: boolean;
 }
 
 interface CompatibleField {
@@ -46,16 +51,19 @@ interface ConfigState {
   validationMessage?: string;
   parameters: AppInstallationParameters;
   contentTypes: ContentType[];
+  sources: SourceProps[];
 }
 
 export default class Config extends Component<ConfigProps, ConfigState> {
   constructor(props: ConfigProps) {
     super(props);
+
     this.state = {
       isButtonLoading: false,
       validationMessage: '',
       parameters: {},
       contentTypes: [],
+      sources: [],
     };
 
     // `onConfigure` allows to configure a callback to be
@@ -80,6 +88,24 @@ export default class Config extends Component<ConfigProps, ConfigState> {
       // the loading screen and present the app to a user.
       this.props.sdk.app.setReady();
     });
+  }
+
+  async componentDidUpdate() {
+    const { parameters } = this.state;
+
+    if (parameters.successfullyVerified) {
+      await this.loadSources();
+    }
+  }
+
+  async loadSources() {
+    const imgix = new ImgixAPI({
+      apiKey: this.state.parameters.imgixAPIKey || '',
+    });
+    const sources = await getSourceIDAndPaths(imgix);
+    this.setState({
+      sources,
+    })
   }
 
   /**
@@ -201,9 +227,33 @@ export default class Config extends Component<ConfigProps, ConfigState> {
       parameters: {
         imgixAPIKey: e.target.value,
         successfullyVerified: this.state.parameters.successfullyVerified,
+        defaultSource: {} as any,
+        disableSourceSelection: this.state.parameters.disableSourceSelection,
       },
     });
   };
+
+  handleSourceChange = (source: SourceProps) => {
+    this.setState({
+      parameters: {
+        defaultSource: source,
+        imgixAPIKey: this.state.parameters.imgixAPIKey,
+        successfullyVerified: this.state.parameters.successfullyVerified,
+        disableSourceSelection: this.state.parameters.disableSourceSelection,
+      },
+    });
+  }
+
+  handleSourceSelectionChange = (e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      parameters: {
+        disableSourceSelection: e.target.checked,
+        imgixAPIKey: this.state.parameters.imgixAPIKey,
+        successfullyVerified: this.state.parameters.successfullyVerified,
+        defaultSource: this.state.parameters.defaultSource,
+      },
+    });
+  }
 
   verifyAPIKey = async () => {
     this.setState({ isButtonLoading: true });
@@ -374,6 +424,37 @@ export default class Config extends Component<ConfigProps, ConfigState> {
           >
             Verify
           </Button>
+
+          <div>
+          <div className="flex-container">
+              <div className="flex-child">
+                <FormLabel htmlFor="#">Default Source</FormLabel>
+                <div>
+                  <SourceSelect
+                    selectedSource={this.state.parameters?.defaultSource || {}}
+                    allSources={this.state.sources}
+                    setSource={this.handleSourceChange}
+                    resetErrors={() => {}}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex-container">
+              <div className="flex-child">
+                <CheckboxField
+                  name="Disable source selection"
+                  id="disableSourceSelection"
+                  labelText="Disable source selection"
+                  checked={this.state.parameters?.disableSourceSelection || false}
+                  onChange={this.handleSourceSelectionChange}
+                />
+              </div>
+            </div>
+          </div>
+
           {this.state.contentTypes.length > 0 && (
             <div>
               <hr></hr>

@@ -7,7 +7,7 @@ import {
   DropdownListItem,
 } from '@contentful/forma-36-react-components';
 
-import { SourceProps } from '../Dialog';
+import { SourceProps } from '../../helpers/sources';
 import './SourceSelectDropdown.css';
 
 interface Props {

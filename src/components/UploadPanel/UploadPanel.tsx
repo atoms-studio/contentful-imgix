@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UploadPanelSection } from './UploadPanelSection'
 import { UploadPanelPreview } from './UploadPanelPreview'
-import { SourceProps } from '../Dialog';
+import { SourceProps } from '../../helpers/sources';
 import ImgixAPI, { APIError } from 'imgix-management-js';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { Button } from '@contentful/forma-36-react-components'
