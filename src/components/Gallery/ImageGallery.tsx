@@ -63,7 +63,7 @@ export class Gallery extends Component<GalleryProps, GalleryState> {
   }
 
   getImages = async () => {
-    let url = `assets/${this.props.selectedSource?.id}?page[number]=${this.props.pageInfo.currentIndex}&page[size]=18&sort=-date_modified`
+    let url = `assets/${this.props.selectedSource?.id}?page[number]=${this.props.pageInfo.currentIndex}&page[size]=18&sort=-date_created`
     let isFiltering = false
     if (this.state.query) {
       isFiltering = true
